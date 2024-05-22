@@ -18,14 +18,16 @@ in {
           Enabled Fcitx5 addons.
         '';
       };
+
       waylandFrontend = mkOption {
         type = types.bool;
         default = false;
-        description = lib.mdDoc ''
+        description = ''
           Use the Wayland input method frontend.
           See [Using Fcitx 5 on Wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland).
         '';
       };
+
       quickPhrase = mkOption {
         type = with types; attrsOf str;
         default = { };
@@ -37,6 +39,7 @@ in {
         '';
         description = "Quick phrases.";
       };
+
       quickPhraseFiles = mkOption {
         type = with types; attrsOf path;
         default = { };
@@ -48,6 +51,7 @@ in {
         '';
         description = "Quick phrase files.";
       };
+
       settings = {
         globalOptions = lib.mkOption {
           type = lib.types.submodule {
@@ -58,6 +62,7 @@ in {
             The global options in `config` file in ini format.
           '';
         };
+
         inputMethod = lib.mkOption {
           type = lib.types.submodule {
             freeformType = settingsFormat.type;
@@ -67,6 +72,7 @@ in {
             The input method configure in `profile` file in ini format.
           '';
         };
+
         addons = lib.mkOption {
           type = with lib.types; (attrsOf anything);
           default = { };
@@ -77,6 +83,7 @@ in {
           example = literalExpression "{ pinyin.globalSection.EmojiEnabled = \"True\"; }";
         };
       };
+
       ignoreUserConfig = lib.mkOption {
         type = lib.types.bool;
         default = false;
