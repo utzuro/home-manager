@@ -18,6 +18,14 @@ in {
           Enabled Fcitx5 addons.
         '';
       };
+      waylandFrontend = mkOption {
+        type = types.bool;
+        default = false;
+        description = lib.mdDoc ''
+          Use the Wayland input method frontend.
+          See [Using Fcitx 5 on Wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland).
+        '';
+      };
     };
   };
 
