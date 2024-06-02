@@ -10,6 +10,7 @@ let
 in {
   options = {
     i18n.inputMethod.fcitx5 = {
+
       addons = mkOption {
         type = with types; listOf package;
         default = [ ];
