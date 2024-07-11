@@ -1667,6 +1667,42 @@ in {
           - 'nix.channels'
         '';
       }
+
+      {
+        time = "2024-06-22T05:49:48+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.blanket'.
+
+          Blanket is a program you can use to improve your focus and increase
+          your productivity by listening to different sounds. See
+          https://github.com/rafaelmardojai/blanket for more.
+        '';
+      }
+
+      {
+        time = "2024-06-26T07:07:17+00:00";
+        condition = with config.programs.yazi;
+          enable && (enableBashIntegration || enableZshIntegration
+            || enableFishIntegration || enableNushellIntegration);
+        message = ''
+          Yazi's shell integration wrappers have been renamed from 'ya' to 'yy'.
+
+          A new option `programs.yazi.shellWrapperName` is also available that
+          allows you to override this name.
+        '';
+      }
+
+      {
+        time = "2024-06-28T14:18:16+00:00";
+        condition = hostPlatform.isLinux;
+        message = ''
+          A new module is available: 'services.glance'.
+
+          Glance is a self-hosted dashboard that puts all your feeds in
+          one place. See https://github.com/glanceapp/glance for more.
+        '';
+      }
     ];
   };
 }
