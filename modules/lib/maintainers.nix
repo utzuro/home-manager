@@ -49,6 +49,12 @@
     github = "bertof";
     githubId = 9915675;
   };
+  bricked = {
+    name = "Bricked";
+    email = "hello@bricked.dev";
+    github = "brckd";
+    githubId = 92804487;
+  };
   CarlosLoboxyz = {
     name = "Carlos Lobo";
     email = "86011416+CarlosLoboxyz@users.noreply.github.com";
@@ -444,11 +450,6 @@
     email = "xdjiaxd@gmail.com";
     github = "podocarp";
     githubId = 10473184;
-  };
-  polykernel = {
-    github = "polykernel";
-    githubId = 81340136;
-    name = "polykernel";
   };
   mainrs = {
     name = "mainrs";
