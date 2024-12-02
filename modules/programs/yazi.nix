@@ -56,29 +56,37 @@ in {
       '';
     };
 
-    enableBashIntegration = mkEnableOption "Bash integration";
+    enableBashIntegration = mkEnableOption "Bash integration" // {
+      default = true;
+    };
 
-    enableZshIntegration = mkEnableOption "Zsh integration";
+    enableZshIntegration = mkEnableOption "Zsh integration" // {
+      default = true;
+    };
 
-    enableFishIntegration = mkEnableOption "Fish integration";
+    enableFishIntegration = mkEnableOption "Fish integration" // {
+      default = true;
+    };
 
-    enableNushellIntegration = mkEnableOption "Nushell integration";
+    enableNushellIntegration = mkEnableOption "Nushell integration" // {
+      default = true;
+    };
 
     keymap = mkOption {
       type = tomlFormat.type;
       default = { };
       example = literalExpression ''
         {
-          input.keymap = [
-            { exec = "close"; on = [ "<C-q>" ]; }
-            { exec = "close --submit"; on = [ "<Enter>" ]; }
-            { exec = "escape"; on = [ "<Esc>" ]; }
-            { exec = "backspace"; on = [ "<Backspace>" ]; }
+          input.prepend_keymap = [
+            { run = "close"; on = [ "<C-q>" ]; }
+            { run = "close --submit"; on = [ "<Enter>" ]; }
+            { run = "escape"; on = [ "<Esc>" ]; }
+            { run = "backspace"; on = [ "<Backspace>" ]; }
           ];
-          manager.keymap = [
-            { exec = "escape"; on = [ "<Esc>" ]; }
-            { exec = "quit"; on = [ "q" ]; }
-            { exec = "close"; on = [ "<C-q>" ]; }
+          manager.prepend_keymap = [
+            { run = "escape"; on = [ "<Esc>" ]; }
+            { run = "quit"; on = [ "q" ]; }
+            { run = "close"; on = [ "<C-q>" ]; }
           ];
         }
       '';

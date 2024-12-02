@@ -60,12 +60,14 @@ in import nmtSrc {
     ./modules/programs/bacon
     ./modules/programs/bash
     ./modules/programs/bat
+    ./modules/programs/borgmatic
     ./modules/programs/bottom
     ./modules/programs/broot
     ./modules/programs/browserpass
     ./modules/programs/btop
     ./modules/programs/carapace
     ./modules/programs/cava
+    ./modules/programs/cmus
     ./modules/programs/comodoro
     ./modules/programs/darcs
     ./modules/programs/dircolors
@@ -79,6 +81,7 @@ in import nmtSrc {
     ./modules/programs/gh-dash
     ./modules/programs/git
     ./modules/programs/git-cliff
+    ./modules/programs/git-credential-oauth
     ./modules/programs/gpg
     ./modules/programs/gradle
     ./modules/programs/granted
@@ -95,6 +98,7 @@ in import nmtSrc {
     ./modules/programs/khal
     ./modules/programs/khard
     ./modules/programs/kitty
+    ./modules/programs/kubecolor
     ./modules/programs/ledger
     ./modules/programs/less
     ./modules/programs/lf
@@ -110,10 +114,12 @@ in import nmtSrc {
     ./modules/programs/ncmpcpp
     ./modules/programs/ne
     ./modules/programs/neomutt
+    ./modules/programs/neovide
     ./modules/programs/neovim
     ./modules/programs/newsboat
     ./modules/programs/nheko
     ./modules/programs/nix-index
+    ./modules/programs/nix-your-shell
     ./modules/programs/nnn
     ./modules/programs/nushell
     ./modules/programs/oh-my-posh
@@ -153,19 +159,23 @@ in import nmtSrc {
     ./modules/programs/tmux
     ./modules/programs/topgrade
     ./modules/programs/translate-shell
+    ./modules/programs/vifm
     ./modules/programs/vim-vint
     ./modules/programs/vscode
     ./modules/programs/watson
     ./modules/programs/wezterm
     ./modules/programs/yazi
+    ./modules/programs/zed-editor
     ./modules/programs/zellij
     ./modules/programs/zk
     ./modules/programs/zplug
     ./modules/programs/zsh
+    ./modules/services/gpg-agent
     ./modules/services/syncthing/common
     ./modules/xresources
   ] ++ lib.optionals isDarwin [
     ./modules/launchd
+    ./modules/services/emacs-darwin
     ./modules/services/espanso-darwin
     ./modules/services/git-sync-darwin
     ./modules/services/imapnotify-darwin
@@ -187,9 +197,9 @@ in import nmtSrc {
     ./modules/programs/awscli
     ./modules/programs/beets # One test relies on services.mpd
     ./modules/programs/bemenu
-    ./modules/programs/borgmatic
     ./modules/programs/boxxy
     ./modules/programs/firefox/firefox.nix
+    ./modules/programs/firefox/floorp.nix
     ./modules/programs/foot
     ./modules/programs/freetube
     ./modules/programs/fuzzel
@@ -242,7 +252,6 @@ in import nmtSrc {
     ./modules/services/fusuma
     ./modules/services/git-sync
     ./modules/services/glance
-    ./modules/services/gpg-agent
     ./modules/services/gromit-mpx
     ./modules/services/home-manager-auto-upgrade
     ./modules/services/hypridle
@@ -263,20 +272,24 @@ in import nmtSrc {
     ./modules/services/pbgopy
     ./modules/services/picom
     ./modules/services/playerctld
+    ./modules/services/podman-linux
     ./modules/services/polybar
     ./modules/services/recoll
     ./modules/services/redshift-gammastep
     ./modules/services/remmina
     ./modules/services/screen-locker
     ./modules/services/signaturepdf
+    ./modules/services/snixembed
     ./modules/services/swayidle
     ./modules/services/swaync
     ./modules/services/swayosd
     ./modules/services/sxhkd
     ./modules/services/syncthing/linux
     ./modules/services/trayer
+    ./modules/services/trayscale
     ./modules/services/twmn
     ./modules/services/udiskie
+    ./modules/services/volnoti
     ./modules/services/window-managers/bspwm
     ./modules/services/window-managers/herbstluftwm
     ./modules/services/window-managers/hyprland

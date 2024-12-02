@@ -1,5 +1,6 @@
 { modulePath, name, description ? null, wrappedPackageName ? null
-, unwrappedPackageName ? null, platforms, visible ? false }:
+, unwrappedPackageName ? null, platforms, visible ? false
+, enableBookmarks ? true }:
 
 { config, lib, pkgs, ... }:
 
@@ -61,7 +62,8 @@ let
     }) // {
       General = {
         StartWithLastProfile = 1;
-        Version = 2;
+      } // lib.optionalAttrs (cfg.profileVersion != null) {
+        Version = cfg.profileVersion;
       };
     };
 
@@ -100,9 +102,10 @@ let
       };
     in ''
       ${builtins.toJSON {
-        version = 4;
+        version = 5;
         lastUserContextId =
-          elemAt (mapAttrsToList (_: container: container.id) containers) 0;
+          foldlAttrs (acc: _: value: if value.id > acc then value.id else acc) 0
+          containers;
         identities = mapAttrsToList containerToIdentity containers ++ [
           {
             userContextId = 4294967294; # 2^32 - 2
@@ -329,7 +332,7 @@ in {
       description = "Resulting ${cfg.name} package.";
     };
 
-    policies = optionalAttrs (unwrappedPackageName != null) (mkOption {
+    policies = optionalAttrs (wrappedPackageName != null) (mkOption {
       inherit visible;
       type = types.attrsOf jsonFormat.type;
       default = { };
@@ -340,6 +343,13 @@ in {
         BlockAboutConfig = true;
       };
     });
+
+    profileVersion = mkOption {
+      internal = true;
+      type = types.nullOr types.ints.unsigned;
+      default = if isDarwin then null else 2;
+      description = "profile version, set null for nix-darwin";
+    };
 
     profiles = mkOption {
       inherit visible;
@@ -426,6 +436,7 @@ in {
           };
 
           bookmarks = mkOption {
+            internal = !enableBookmarks;
             type = let
               bookmarkSubmodule = types.submodule ({ config, name, ... }: {
                 options = {
@@ -538,93 +549,18 @@ in {
             description = "Whether this is a default profile.";
           };
 
-          search = {
-            force = mkOption {
-              type = with types; bool;
-              default = false;
-              description = ''
-                Whether to force replace the existing search
-                configuration. This is recommended since ${name} will
-                replace the symlink for the search configuration on every
-                launch, but note that you'll lose any existing
-                configuration by enabling this.
-              '';
-            };
-
-            default = mkOption {
-              type = with types; nullOr str;
-              default = null;
-              example = "DuckDuckGo";
-              description = ''
-                The default search engine used in the address bar and search bar.
-              '';
-            };
-
-            privateDefault = mkOption {
-              type = with types; nullOr str;
-              default = null;
-              example = "DuckDuckGo";
-              description = ''
-                The default search engine used in the Private Browsing.
-              '';
-            };
-
-            order = mkOption {
-              type = with types; uniq (listOf str);
-              default = [ ];
-              example = [ "DuckDuckGo" "Google" ];
-              description = ''
-                The order the search engines are listed in. Any engines
-                that aren't included in this list will be listed after
-                these in an unspecified order.
-              '';
-            };
-
-            engines = mkOption {
-              type = with types; attrsOf (attrsOf jsonFormat.type);
-              default = { };
-              example = literalExpression ''
-                {
-                  "Nix Packages" = {
-                    urls = [{
-                      template = "https://search.nixos.org/packages";
-                      params = [
-                        { name = "type"; value = "packages"; }
-                        { name = "query"; value = "{searchTerms}"; }
-                      ];
-                    }];
-
-                    icon = "''${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
-                    definedAliases = [ "@np" ];
-                  };
-
-                  "NixOS Wiki" = {
-                    urls = [{ template = "https://wiki.nixos.org/index.php?search={searchTerms}"; }];
-                    iconUpdateURL = "https://wiki.nixos.org/favicon.png";
-                    updateInterval = 24 * 60 * 60 * 1000; # every day
-                    definedAliases = [ "@nw" ];
-                  };
-
-                  "Bing".metaData.hidden = true;
-                  "Google".metaData.alias = "@g"; # builtin engines only support specifying one additional alias
-                }
-              '';
-              description = ''
-                Attribute set of search engine configurations. Engines
-                that only have {var}`metaData` specified will
-                be treated as builtin to ${name}.
-
-                See [SearchEngine.jsm](https://searchfox.org/mozilla-central/rev/669329e284f8e8e2bb28090617192ca9b4ef3380/toolkit/components/search/SearchEngine.jsm#1138-1177)
-                in Firefox's source for available options. We maintain a
-                mapping to let you specify all options in the referenced
-                link without underscores, but it may fall out of date with
-                future options.
-
-                Note, {var}`icon` is also a special option
-                added by Home Manager to make it convenient to specify
-                absolute icon paths.
-              '';
-            };
+          search = mkOption {
+            type = types.submodule (args:
+              import ./profiles/search.nix {
+                inherit (args) config;
+                inherit lib pkgs;
+                appName = cfg.name;
+                package = cfg.finalPackage;
+                modulePath = modulePath ++ [ "profiles" name "search" ];
+                profilePath = config.path;
+              });
+            default = { };
+            description = "Declarative search engine configuration.";
           };
 
           containersForce = mkOption {
@@ -812,15 +748,6 @@ in {
       its example for how to do this.
     '';
 
-    programs.firefox.policies = {
-      ExtensionSettings = listToAttrs (map (lang:
-        nameValuePair "langpack-${lang}@firefox.mozilla.org" {
-          installation_mode = "normal_installed";
-          install_url =
-            "https://releases.mozilla.org/pub/firefox/releases/${cfg.package.version}/linux-x86_64/xpi/${lang}.xpi";
-        }) cfg.languagePacks);
-    };
-
     home.packages = lib.optional (cfg.finalPackage != null) cfg.finalPackage;
 
     home.file = mkMerge ([{
@@ -853,152 +780,12 @@ in {
           force = profile.containersForce;
         };
 
-      "${profilesPath}/${profile.path}/search.json.mozlz4" = mkIf
-        (profile.search.default != null || profile.search.privateDefault != null
-          || profile.search.order != [ ] || profile.search.engines != { }) {
-            force = profile.search.force;
-            source = let
-              settings = {
-                version = 6;
-                engines = let
-                  # Map of nice field names to internal field names.
-                  # This is intended to be exhaustive and should be
-                  # updated at every version bump.
-                  internalFieldNames = (genAttrs [
-                    "name"
-                    "isAppProvided"
-                    "loadPath"
-                    "hasPreferredIcon"
-                    "updateInterval"
-                    "updateURL"
-                    "iconUpdateURL"
-                    "iconURL"
-                    "iconMapObj"
-                    "metaData"
-                    "orderHint"
-                    "definedAliases"
-                    "urls"
-                  ] (name: "_${name}")) // {
-                    searchForm = "__searchForm";
-                  };
-
-                  processCustomEngineInput = input:
-                    (removeAttrs input [ "icon" ])
-                    // optionalAttrs (input ? icon) {
-                      # Convenience to specify absolute path to icon
-                      iconURL = "file://${input.icon}";
-                    } // (optionalAttrs (input ? iconUpdateURL) {
-                      # Convenience to default iconURL to iconUpdateURL so
-                      # the icon is immediately downloaded from the URL
-                      iconURL = input.iconURL or input.iconUpdateURL;
-                    } // {
-                      # Required for custom engine configurations, loadPaths
-                      # are unique identifiers that are generally formatted
-                      # like: [source]/path/to/engine.xml
-                      loadPath = ''
-                        [home-manager]/${moduleName}.profiles.${profile.name}.search.engines."${
-                          replaceStrings [ "\\" ] [ "\\\\" ] input.name
-                        }"'';
-                    });
-
-                  processEngineInput = name: input:
-                    let
-                      requiredInput = {
-                        inherit name;
-                        isAppProvided = input.isAppProvided or removeAttrs input
-                          [ "metaData" ] == { };
-                        metaData = input.metaData or { };
-                      };
-                    in if requiredInput.isAppProvided then
-                      requiredInput
-                    else
-                      processCustomEngineInput (input // requiredInput);
-
-                  buildEngineConfig = name: input:
-                    mapAttrs' (name: value: {
-                      name = internalFieldNames.${name} or name;
-                      inherit value;
-                    }) (processEngineInput name input);
-
-                  sortEngineConfigs = configs:
-                    let
-                      buildEngineConfigWithOrder = order: name:
-                        let
-                          config = configs.${name} or {
-                            _name = name;
-                            _isAppProvided = true;
-                            _metaData = { };
-                          };
-                        in config // {
-                          _metaData = config._metaData // { inherit order; };
-                        };
-
-                      engineConfigsWithoutOrder =
-                        attrValues (removeAttrs configs profile.search.order);
-
-                      sortedEngineConfigs =
-                        (imap buildEngineConfigWithOrder profile.search.order)
-                        ++ engineConfigsWithoutOrder;
-                    in sortedEngineConfigs;
-
-                  engineInput = profile.search.engines // {
-                    # Infer profile.search.default as an app provided
-                    # engine if it's not in profile.search.engines
-                    ${profile.search.default} =
-                      profile.search.engines.${profile.search.default} or { };
-                  } // {
-                    ${profile.search.privateDefault} =
-                      profile.search.engines.${profile.search.privateDefault} or { };
-                  };
-                in sortEngineConfigs (mapAttrs buildEngineConfig engineInput);
-
-                metaData = optionalAttrs (profile.search.default != null) {
-                  current = profile.search.default;
-                  hash = "@hash@";
-                } // optionalAttrs (profile.search.privateDefault != null) {
-                  private = profile.search.privateDefault;
-                  privateHash = "@privateHash@";
-                } // {
-                  useSavedOrder = profile.search.order != [ ];
-                };
-              };
-
-              # Home Manager doesn't circumvent user consent and isn't acting
-              # maliciously. We're modifying the search outside of the browser, but
-              # a claim by Mozilla to remove this would be very anti-user, and
-              # is unlikely to be an issue for our use case.
-              disclaimer = appName:
-                "By modifying this file, I agree that I am doing so "
-                + "only within ${appName} itself, using official, user-driven search "
-                + "engine selection processes, and in a way which does not circumvent "
-                + "user consent. I acknowledge that any attempt to change this file "
-                + "from outside of ${appName} is a malicious act, and will be responded "
-                + "to accordingly.";
-
-              salt = if profile.search.default != null then
-                profile.path + profile.search.default + disclaimer cfg.name
-              else
-                null;
-
-              privateSalt = if profile.search.privateDefault != null then
-                profile.path + profile.search.privateDefault
-                + disclaimer cfg.name
-              else
-                null;
-            in pkgs.runCommand "search.json.mozlz4" {
-              nativeBuildInputs = with pkgs; [ mozlz4a openssl ];
-              json = builtins.toJSON settings;
-              inherit salt privateSalt;
-            } ''
-              if [[ -n $salt ]]; then
-                export hash=$(echo -n "$salt" | openssl dgst -sha256 -binary | base64)
-                export privateHash=$(echo -n "$privateSalt" | openssl dgst -sha256 -binary | base64)
-                mozlz4a <(substituteStream json search.json.in --subst-var hash --subst-var privateHash) "$out"
-              else
-                mozlz4a <(echo "$json") "$out"
-              fi
-            '';
-          };
+      "${profilesPath}/${profile.path}/search.json.mozlz4" =
+        mkIf (profile.search.enable) {
+          enable = profile.search.enable;
+          force = profile.search.force;
+          source = profile.search.file;
+        };
 
       "${profilesPath}/${profile.path}/extensions" =
         mkIf (profile.extensions != [ ]) {
@@ -1012,6 +799,16 @@ in {
           force = true;
         };
     }));
-  } // setAttrByPath modulePath { finalPackage = wrapPackage cfg.package; });
-}
+  } // setAttrByPath modulePath {
+    finalPackage = wrapPackage cfg.package;
 
+    policies = {
+      ExtensionSettings = listToAttrs (map (lang:
+        nameValuePair "langpack-${lang}@firefox.mozilla.org" {
+          installation_mode = "normal_installed";
+          install_url =
+            "https://releases.mozilla.org/pub/firefox/releases/${cfg.package.version}/linux-x86_64/xpi/${lang}.xpi";
+        }) cfg.languagePacks);
+    };
+  });
+}
