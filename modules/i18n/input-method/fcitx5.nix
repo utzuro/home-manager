@@ -34,11 +34,12 @@ in {
 
     home.sessionVariables = {
       GLFW_IM_MODULE = "ibus"; # IME support in kitty
-      GTK_IM_MODULE = "fcitx";
-      QT_IM_MODULE = "fcitx";
       XMODIFIERS = "@im=fcitx";
       QT_PLUGIN_PATH =
         "$QT_PLUGIN_PATH\${QT_PLUGIN_PATH:+:}${fcitx5Package}/${pkgs.qt6.qtbase.qtPluginPrefix}";
+    } // lib.optionalAttrs (!cfg.waylandFrontend) {
+      GTK_IM_MODULE = "fcitx";
+      QT_IM_MODULE = "fcitx";
     };
 
     systemd.user.services.fcitx5-daemon = {
